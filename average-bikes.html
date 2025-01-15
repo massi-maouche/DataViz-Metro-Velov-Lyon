@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Moyenne de Vélos par Station de Métro</title>
+
+  <!-- Style global -->
+  <link rel="stylesheet" href="css/style.css">
+
+  <!-- D3 + turf -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@7.2.0/turf.min.js"></script>
+</head>
+<body>
+  <!-- Barre de navigation -->
+  <nav class="navbar">
+    <a href="index.html" class="logo">Vélo'v DataViz</a>
+    <div class="nav-links">
+      <a href="index.html">Heatmap Map</a>
+      <a href="station-availability.html">Disponibilité des Vélos</a>
+      <a href="average-bikes.html">Moyenne des Vélos</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Moyenne de vélos disponibles par station de métro</h1>
+    <p>Comparez le nombre moyen de vélos disponibles autour des stations de métro, selon la journée et l’heure sélectionnées.</p>
+    
+    <div class="slider-container" style="display: inline-block; margin-right: 20px;">
+      <label for="day-slider">Sélectionner le Jour :</label>
+      <input type="range" id="day-slider" min="0" max="5" value="0">
+      <span id="day-label">Friday</span>
+    </div>
+
+    <div class="slider-container" style="display: inline-block;">
+      <label for="hour-slider">Sélectionner l'Heure :</label>
+      <input type="range" id="hour-slider" min="0" max="23" value="0">
+      <span id="hour-label">00:00</span>
+    </div>
+    
+    <svg id="barChart" width="960" height="600"></svg>
+  </div>
+
+  <footer>
+    &copy; 2025 - Projet Dataviz Vélo'v
+  </footer>
+
+<script>
+  const startDate = new Date(2021, 0, 1); // 1 Janvier 2021
+  const daysOfWeek = ["Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"];
+  const hoursOfDay = [...Array(24).keys()].map(h => h.toString().padStart(2, '0') + ":00");
+
+  const daySlider = document.getElementById('day-slider');
+  const hourSlider = document.getElementById('hour-slider');
+  const dayLabel = document.getElementById('day-label');
+  const hourLabel = document.getElementById('hour-label');
+
+  function updateDayLabel() {
+    dayLabel.textContent = daysOfWeek[+daySlider.value];
+  }
+  function updateHourLabel() {
+    hourLabel.textContent = hoursOfDay[hourSlider.value];
+  }
+  updateDayLabel();
+  updateHourLabel();
+
+  let bikeStations = {};
+  let activityData = [];
+  let geoData = {};
+  let svg, xScale, yScale;
+  const margin = {top: 20, right: 30, bottom: 120, left: 50};
+  const width = 960 - margin.left - margin.right;
+  const height = 600 - margin.top - margin.bottom;
+
+  // Charger les données
+  d3.json('data/sytral_tcl_sytral.tclstation.json').then(function (geoJson) {
+    geoData = geoJson;
+    d3.csv('data/data-stations.csv').then(function (bikeCsv) {
+      d3.csv('data/ddata-bikes.csv').then(function (activityCsv) {
+        bikeCsv.forEach(d => {
+          bikeStations[d.id_velov] = { lat: +d.latitude, lon: +d.longitude };
+        });
+
+        activityData = activityCsv;
+
+        svg = d3.select("#barChart")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        // Définir le dégradé dans <defs>
+        const defs = svg.append("defs");
+
+        const gradient = defs.append("linearGradient")
+                             .attr("id", "barGradient")
+                             .attr("x1", "0%")
+                             .attr("y1", "0%")
+                             .attr("x2", "0%")
+                             .attr("y2", "100%");
+
+        // Définir les couleurs du dégradé
+        gradient.append("stop")
+                .attr("offset", "0%")
+                .attr("stop-color", "#69b3a2")
+                .attr("stop-opacity", 1);
+
+        gradient.append("stop")
+                .attr("offset", "100%")
+                .attr("stop-color", "#1f77b4")
+                .attr("stop-opacity", 1);
+
+        // Initialisation des axes
+        xScale = d3.scaleBand()
+                   .range([0, width])
+                   .padding(0.1);
+
+        yScale = d3.scaleLinear()
+                   .range([height, 0]);
+
+        // Groupes pour les axes
+        const xAxisGroup = svg.append("g")
+                               .attr("transform", `translate(0,${height})`)
+                               .attr("class", "x-axis");
+
+        const yAxisGroup = svg.append("g")
+                               .attr("class", "y-axis");
+
+        window.updatePlot = function () {
+          let dayIndex = +daySlider.value;
+          let hour = +hourSlider.value;
+
+          const selectedDate = new Date(startDate);
+          selectedDate.setDate(startDate.getDate() + dayIndex);
+
+          const selectedYear = selectedDate.getFullYear();
+          const selectedMonth = selectedDate.getMonth() + 1;
+          const selectedDay = selectedDate.getDate();
+
+          let filteredActivities = activityData.filter(d =>
+            +d.year === selectedYear &&
+            +d.month === selectedMonth &&
+            +d.day === selectedDay &&
+            +d.hour === hour
+          );
+
+          let activityByStation = {};
+          filteredActivities.forEach(d => {
+            if (!activityByStation[d.id_velov]) {
+              activityByStation[d.id_velov] = { total: 0, count: 0 };
+            }
+            activityByStation[d.id_velov].total += +d.bikes;
+            activityByStation[d.id_velov].count += 1;
+          });
+
+          let avgBikes = {};
+          for (let id in activityByStation) {
+            avgBikes[id] = activityByStation[id].total / activityByStation[id].count;
+          }
+
+          let metroData = geoData.features.map(metroStation => {
+            let metroLat = metroStation.geometry.coordinates[1];
+            let metroLon = metroStation.geometry.coordinates[0];
+            let metroName = metroStation.properties.nom;
+
+            let closestBikeStation = null;
+            let minDistance = Infinity;
+
+            for (let bikeId in bikeStations) {
+              let bikeLat = bikeStations[bikeId].lat;
+              let bikeLon = bikeStations[bikeId].lon;
+              let dist = calculateDistance(metroLat, metroLon, bikeLat, bikeLon);
+              if (dist < minDistance) {
+                minDistance = dist;
+                closestBikeStation = bikeId;
+              }
+            }
+            return {
+              metroStation: metroName,
+              avgBikes: avgBikes[closestBikeStation] || 0
+            };
+          });
+
+          metroData.sort((a, b) => d3.ascending(a.metroStation, b.metroStation));
+
+          // Mise à jour des domaines des échelles
+          xScale.domain(metroData.map(d => d.metroStation));
+          yScale.domain([0, d3.max(metroData, d => d.avgBikes)]);
+
+          // Mise à jour des axes avec transition
+          const xAxis = d3.axisBottom(xScale);
+          xAxisGroup.transition()
+                    .duration(1000)
+                    .call(xAxis)
+                    .selectAll("text")
+                    .style("text-anchor", "end")
+                    .attr("transform", "rotate(-45) translate(-5, -5)");
+
+          const yAxis = d3.axisLeft(yScale);
+          yAxisGroup.transition()
+                    .duration(1000)
+                    .call(yAxis);
+
+          // Liaison des données
+          const bars = svg.selectAll(".bar")
+                          .data(metroData, d => d.metroStation);
+
+          // Entrée des nouvelles barres
+          bars.enter()
+              .append("rect")
+              .attr("class", "bar")
+              .attr("x", d => xScale(d.metroStation))
+              .attr("width", xScale.bandwidth())
+              .attr("y", yScale(0))
+              .attr("height", 0)
+              .attr("fill", "url(#barGradient)") // Utiliser le dégradé
+            .merge(bars) // Fusion avec les barres existantes
+              .transition()
+              .duration(1000)
+              .attr("x", d => xScale(d.metroStation))
+              .attr("width", xScale.bandwidth())
+              .attr("y", d => yScale(d.avgBikes))
+              .attr("height", d => height - yScale(d.avgBikes))
+              .attr("fill", "url(#barGradient)"); // Utiliser le dégradé
+
+          // Sortie des barres supprimées
+          bars.exit()
+              .transition()
+              .duration(1000)
+              .attr("y", yScale(0))
+              .attr("height", 0)
+              .remove();
+        };
+
+        updatePlot(); // Première mise à jour
+
+        // Événements des curseurs
+        daySlider.addEventListener('input', () => {
+          updateDayLabel();
+          updatePlot();
+        });
+        hourSlider.addEventListener('input', () => {
+          updateHourLabel();
+          updatePlot();
+        });
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+          // Distance de Haversine
+          const R = 6371e3; // Rayon de la Terre en mètres
+          const rad = Math.PI / 180;
+          const dLat = (lat2 - lat1) * rad;
+          const dLon = (lon2 - lon1) * rad;
+          const a = Math.sin(dLat / 2) ** 2 +
+                    Math.cos(lat1 * rad) * Math.cos(lat2 * rad) *
+                    Math.sin(dLon / 2) ** 2;
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          return R * c;
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

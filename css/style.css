@@ -1,0 +1,175 @@
+/* style.css */
+
+/* Reset et style global */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+  color: #333;
+  min-height: 100vh;
+}
+
+/* Barre de navigation */
+.navbar {
+  background-color: #2f3e9e;
+  padding: 10px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.navbar .logo {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.navbar .nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.navbar .nav-links a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.3s ease;
+}
+
+.navbar .nav-links a:hover {
+  opacity: 0.7;
+}
+
+/* Conteneur général */
+.container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 80px auto 0 auto; /* Laisser de la place pour la navbar sticky */
+}
+
+h1, h2, h3 {
+  color: #4a4a8c;
+  margin-bottom: 10px;
+}
+
+/* Style des sliders + boutons */
+.slider-container,
+.controls {
+  margin-top: 15px;
+  padding: 10px;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  margin-bottom: 20px;
+}
+
+.slider-container label,
+.controls label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #444;
+  margin-right: 10px;
+}
+
+.slider-container input[type="range"] {
+  cursor: pointer;
+  margin: 0 10px;
+}
+
+.slider-container span,
+.controls span {
+  font-weight: 600;
+  color: #333;
+  margin-left: 5px;
+}
+
+.slider-container button {
+  background-color: #4a4a8c;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.slider-container button:hover {
+  background-color: #3a3a7c;
+}
+
+/* Styles spécifiques pour les SVG de D3 */
+.d3-chart {
+  display: block;
+  margin: 0 auto;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+}
+
+/* Éviter d'appliquer un style global à TOUS les svg */
+.custom-svg {
+  background: #000;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  margin: 20px 0;
+}
+
+/* Tooltip styling */
+.tooltip {
+  position: absolute;
+  text-align: center;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.75);
+  color: white;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  visibility: hidden;
+  z-index: 1002;
+}
+
+.dot {
+  stroke: #333;
+  stroke-width: 1.5px;
+}
+
+.x-axis path, .y-axis path,
+.x-axis line, .y-axis line {
+  stroke: #bbb;
+}
+
+.x-axis text, .y-axis text {
+  font-size: 12px;
+  fill: #666;
+}
+
+footer {
+  text-align: center;
+  padding: 15px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+/* Styles pour la carte Leaflet */
+#map-compass {
+  width: 100%;
+  height: 600px;
+  margin: 20px 0;
+  position: relative;
+  z-index: 1; /* Pour être en dessous des sliders */
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Disponibilité des Vélos au Fil du Temps</title>
+  
+  <!-- Feuille de style globale (utilise le même style.css que votre page principale) -->
+  <link rel="stylesheet" href="css/style.css">
+  
+  <!-- D3.js -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  
+  <style>
+    /* Styles spécifiques pour cette page */
+
+    /* Utiliser une classe spécifique pour éviter les conflits avec Leaflet */
+    .d3-chart {
+      display: block;
+      margin: 0 auto;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+    }
+    
+    /* Optionnel : Ajustements pour les éléments D3 */
+    .tooltip {
+      position: absolute;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.75);
+      color: white;
+      border-radius: 4px;
+      font-size: 12px;
+      pointer-events: none;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      visibility: hidden;
+      z-index: 1002; /* Assurer que le tooltip est au-dessus des autres éléments */
+    }
+    
+    .dot {
+      stroke: #333;
+      stroke-width: 1.5px;
+    }
+    
+    /* Appliquer le dégradé aux axes */
+    .x-axis path, .y-axis path,
+    .x-axis line, .y-axis line {
+      stroke: url(#axisGradient);
+    }
+    
+    .x-axis text, .y-axis text {
+      font-size: 12px;
+      fill: #666;
+    }
+  </style>
+</head>
+<body>
+  <!-- Barre de navigation identique à la page principale -->
+  <nav class="navbar">
+    <a href="index.html" class="logo">Vélo'v DataViz</a>
+    <div class="nav-links">
+      <a href="index.html">Heatmap Map</a>
+      <a href="station-availability.html">Disponibilité des Vélos</a>
+      <a href="average-bikes.html">Average Bikes</a>
+    </div>
+  </nav>
+
+  <div class="container">
+    <h1>Disponibilité des Vélos au Fil du Temps</h1>
+    <p>Analysez la disponibilité des vélos en fonction des stations de métro et du temps. Sélectionnez une journée et une station de métro pour visualiser les tendances.</p>
+    
+    <!-- Contrôles pour la sélection -->
+    <div class="controls">
+      <label for="dayDropdown">Sélectionner la journée :</label>
+      <select id="dayDropdown"></select>
+      
+      <label for="stationDropdown">Sélectionner la station de métro :</label>
+      <select id="stationDropdown"></select>
+    </div>
+    
+    <!-- Conteneur pour le graphique D3 -->
+    <svg class="d3-chart" width="960" height="500"></svg>
+    
+    <!-- Tooltip pour l'interaction -->
+    <div class="tooltip"></div>
+  </div>
+  
+  <footer>
+    &copy; 2025 - Projet Dataviz Vélo'v 
+  </footer>
+  
+  <script>
+    const RADIUS = 500; // 500 mètres
+    
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Rayon de la Terre en mètres
+      const φ1 = (lat1 * Math.PI) / 180;
+      const φ2 = (lat2 * Math.PI) / 180;
+      const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+      const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+  
+      const a =
+        Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  
+      return R * c;
+    }
+  
+    Promise.all([
+      d3.csv("data/data-stations.csv"),
+      d3.csv("data/ddata-bikes.csv"),
+      d3.json("data/sytral_tcl_sytral.tclstation.json")
+    ]).then(([bikeStations, bikeData, metroStations]) => {
+      const bikeStationsMap = new Map(
+        bikeStations.map(d => [d.id_velov, { lat: +d.latitude, lon: +d.longitude }])
+      );
+  
+      const metroStationsList = Array.from(
+        new Map(
+          metroStations.features.map(feature => [feature.properties.nom, {
+            name: feature.properties.nom,
+            lat: feature.geometry.coordinates[1],
+            lon: feature.geometry.coordinates[0]
+          }])
+        ).values()
+      );
+  
+      bikeData.forEach(d => {
+        d.available_bikes = +d.bikes + +d.arrival30min - +d.departure30min;
+        d.time = `${d.hour.padStart(2, "0")}:${d.minute.padStart(2, "0")}`;
+        d.date = `${d.year}-${d.month.padStart(2, "0")}-${d.day.padStart(2, "0")}`;
+      });
+  
+      const uniqueDates = Array.from(new Set(bikeData.map(d => d.date)))
+        .filter(date => date !== "2021-01-07")
+        .sort();
+      const dayDropdown = d3.select("#dayDropdown");
+      const stationDropdown = d3.select("#stationDropdown");
+  
+      dayDropdown
+        .selectAll("option")
+        .data(uniqueDates)
+        .join("option")
+        .attr("value", d => d)
+        .text(d => d);
+  
+      stationDropdown
+        .selectAll("option")
+        .data(metroStationsList)
+        .join("option")
+        .attr("value", d => d.name)
+        .text(d => d.name);
+  
+      const svg = d3.select(".d3-chart");
+      const width = +svg.attr("width");
+      const height = +svg.attr("height");
+      const margin = { top: 20, right: 30, bottom: 50, left: 50 };
+  
+      const xScale = d3.scaleTime().range([margin.left, width - margin.right]);
+      const yScale = d3.scaleLinear().range([height - margin.bottom, margin.top]);
+  
+      const xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%H:%M"));
+      const yAxis = d3.axisLeft(yScale);
+  
+      svg.append("g").attr("class", "x-axis").attr("transform", `translate(0,${height - margin.bottom})`);
+      svg.append("g").attr("class", "y-axis").attr("transform", `translate(${margin.left},0)`);
+  
+      // Définir le dégradé dans <defs>
+      const defs = svg.append("defs");
+  
+      // Dégradé pour la ligne et l'aire sous la ligne
+      const lineGradient = defs.append("linearGradient")
+                               .attr("id", "lineGradient")
+                               .attr("x1", "0%")
+                               .attr("y1", "0%")
+                               .attr("x2", "0%")
+                               .attr("y2", "100%");
+  
+      lineGradient.append("stop")
+                 .attr("offset", "0%")
+                 .attr("stop-color", "#69b3a2") // Couleur similaire à la première visualisation
+                 .attr("stop-opacity", 1);
+  
+      lineGradient.append("stop")
+                 .attr("offset", "70%")
+                 .attr("stop-color", "#1f77b4")
+                 .attr("stop-opacity", 0);
+  
+      // Dégradé pour les axes
+      const axisGradient = defs.append("linearGradient")
+                               .attr("id", "axisGradient")
+                               .attr("x1", "0%")
+                               .attr("y1", "0%")
+                               .attr("x2", "0%")
+                               .attr("y2", "100%");
+  
+      axisGradient.append("stop")
+                 .attr("offset", "0%")
+                 .attr("stop-color", "#69b3a2")
+                 .attr("stop-opacity", 1);
+  
+      axisGradient.append("stop")
+                 .attr("offset", "100%")
+                 .attr("stop-color", "#1f77b4")
+                 .attr("stop-opacity", 1);
+  
+      // Générateur d'aire
+      const area = d3.area()
+                     .x(d => xScale(d.time))
+                     .y0(yScale(0))
+                     .y1(d => yScale(d.totalBikes))
+                     .curve(d3.curveMonotoneX); // Pour une courbe plus lisse
+  
+      // Appliquer le dégradé à l'aire
+      svg.append("path")
+         .attr("class", "area")
+         .attr("fill", "url(#lineGradient)") // Utiliser le dégradé
+         .attr("opacity", 0.3); // Ajustez l'opacité selon vos préférences
+  
+      // Appliquer le dégradé à la ligne
+      svg.append("path")
+         .attr("class", "line")
+         .attr("fill", "none")
+         .attr("stroke", "url(#lineGradient)") // Utiliser le dégradé
+         .attr("stroke-width", 2);
+  
+      const tooltip = d3.select(".tooltip");
+  
+      function updateChart(selectedDate, selectedStation) {
+        const metro = metroStationsList.find(m => m.name === selectedStation);
+  
+        const nearbyStations = Array.from(bikeStationsMap.entries())
+          .filter(([id, coords]) =>
+            calculateDistance(metro.lat, metro.lon, coords.lat, coords.lon) <= RADIUS
+          )
+          .map(([id]) => id);
+  
+        const filteredBikeData = bikeData
+          .filter(d => d.date === selectedDate && nearbyStations.includes(d.id_velov))
+          .reduce((acc, d) => {
+            const key = d.time;
+            acc[key] = (acc[key] || 0) + d.available_bikes;
+            return acc;
+          }, {});
+  
+        const lineData = Object.entries(filteredBikeData).map(([time, totalBikes]) => ({
+          time: d3.timeParse("%H:%M")(time),
+          totalBikes
+        }));
+  
+        // Trier les données par temps
+        lineData.sort((a, b) => d3.ascending(a.time, b.time));
+  
+        xScale.domain(d3.extent(lineData, d => d.time));
+        yScale.domain([0, d3.max(lineData, d => d.totalBikes)]);
+  
+        // Mise à jour des axes avec transition
+        svg.select(".x-axis")
+           .transition()
+           .duration(1000)
+           .call(xAxis);
+  
+        svg.select(".y-axis")
+           .transition()
+           .duration(1000)
+           .call(yAxis);
+  
+        // Mise à jour de l'aire avec transition
+        svg.select(".area")
+           .datum(lineData)
+           .transition()
+           .duration(1000)
+           .attr("d", area);
+  
+        // Mise à jour de la ligne avec transition
+        svg.select(".line")
+           .datum(lineData)
+           .transition()
+           .duration(1000)
+           .attr("d", d3.line()
+             .x(d => xScale(d.time))
+             .y(d => yScale(d.totalBikes))
+             .curve(d3.curveMonotoneX) // Assurer la même courbe que l'aire
+           );
+  
+        // Mettre à jour les points
+        const dots = svg.selectAll(".dot")
+          .data(lineData, d => d.time);
+  
+        dots.exit().remove();
+  
+        const enterDots = dots.enter()
+          .append("circle")
+          .attr("class", "dot")
+          .attr("cx", d => xScale(d.time))
+          .attr("cy", d => yScale(d.totalBikes))
+          .attr("r", 6)
+          .attr("fill", "url(#lineGradient)") // Utiliser le dégradé
+          .attr("stroke", "black")
+          .on("mouseover", (event, d) => {
+            tooltip.style("visibility", "visible")
+              .html(`
+                <strong>Heure :</strong> ${d3.timeFormat("%H:%M")(d.time)}<br>
+                <strong>Vélos disponibles :</strong> ${d.totalBikes}
+              `)
+              .style("left", `${event.pageX + 10}px`)
+              .style("top", `${event.pageY - 10}px`);
+          })
+          .on("mousemove", (event) => {
+            tooltip.style("left", `${event.pageX + 10}px`)
+              .style("top", `${event.pageY - 10}px`);
+          })
+          .on("mouseout", () => {
+            tooltip.style("visibility", "hidden");
+          });
+  
+        enterDots.merge(dots)
+          .transition()
+          .duration(1000)
+          .attr("cx", d => xScale(d.time))
+          .attr("cy", d => yScale(d.totalBikes))
+          .attr("fill", "url(#lineGradient)"); // Utiliser le dégradé
+      }
+  
+      // Initialisation avec la première date et station
+      const initialDate = uniqueDates[0];
+      const initialStation = metroStationsList[0].name;
+  
+      updateChart(initialDate, initialStation);
+  
+      // Événements pour les dropdowns
+      dayDropdown.on("change", function () {
+        updateChart(this.value, stationDropdown.property("value"));
+      });
+  
+      stationDropdown.on("change", function () {
+        updateChart(dayDropdown.property("value"), this.value);
+      });
+    });
+  </script>
+</body>
+</html>
