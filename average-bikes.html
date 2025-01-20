@@ -92,21 +92,24 @@
 
         const gradient = defs.append("linearGradient")
                              .attr("id", "barGradient")
-                             .attr("x1", "0%")
-                             .attr("y1", "0%")
-                             .attr("x2", "0%")
-                             .attr("y2", "100%");
+                             .attr("gradientUnits", "userSpaceOnUse")
+                             .attr("x1", 0)
+                             .attr("y1", 0)
+                             .attr("x2", 0)
+                             .attr("y2", height); // Dégradé vertical complet
 
-        // Définir les couleurs du dégradé
+        // Couleurs du dégradé
         gradient.append("stop")
                 .attr("offset", "0%")
-                .attr("stop-color", "#69b3a2")
-                .attr("stop-opacity", 1);
+                .attr("stop-color", "#ff7f0e"); // Couleur plus vive en haut
+
+        gradient.append("stop")
+                .attr("offset", "50%")
+                .attr("stop-color", "#2ca02c"); // Couleur intermédiaire
 
         gradient.append("stop")
                 .attr("offset", "100%")
-                .attr("stop-color", "#1f77b4")
-                .attr("stop-opacity", 1);
+                .attr("stop-color", "#1f77b4"); // Couleur plus vive en bas
 
         // Initialisation des axes
         xScale = d3.scaleBand()
