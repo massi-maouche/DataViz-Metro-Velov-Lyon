@@ -1,15 +1,9 @@
-// main.js (script classique)
-
-// Variables globales : Jour, Demi-heure
-let playInterval = null;  // pour le slider "jour"
-let timeInterval = null;  // pour le slider "demi-heure"
-
-// Variables pour la heatmap
+let playInterval = null;     // pour le slider "jour"
+let timeInterval = null;     // pour le slider "demi-heure"
 let currentHeatLayer = null;
 let currentHeatPoints = [];
 let transitionInterval = null;
 
-// Paramètres de transition (durée, steps, interval)
 const TRANSITION_DURATION = 500; // ms
 const TRANSITION_STEPS    = 20;
 const TRANSITION_INTERVAL = TRANSITION_DURATION / TRANSITION_STEPS;
@@ -19,13 +13,13 @@ const startDate = new Date(2021, 0, 1);
 const endDate   = new Date(2021, 0, 7);
 const totalDays = Math.floor((endDate - startDate) / (1000*60*60*24));
 
-// Lorsque le DOM est chargé
-document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Initialiser la carte (initMap est global, défini dans map.js)
+// Quand le DOM est prêt (version D3)
+d3.select(document).on('DOMContentLoaded', async function() {
+  // 1. Initialiser la carte
   const map = initMap();
   console.log("Map initialisée :", map);
 
-  // 2. Charger les données (fonctions globales définies dans data.js)
+  // 2. Charger les données
   let metroStations, bikeStations, metroLines, bikesData;
   try {
     [metroStations, bikeStations, metroLines, bikesData] = await Promise.all([
@@ -41,56 +35,63 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 3. Dessiner : stations de métro, lignes, stations Vélo'v
-  const selectedDate = new Date(2021, 0, 1); // Exemple de date sélectionnée
-  const halfHourIndex = 24; // Exemple d'index de demi-heure (12:00)
+  // 3. Dessiner : stations de métro, lignes, stations Vélo'v (exemple initial)
+  const selectedDate = new Date(2021, 0, 1);
+  const halfHourIndex = 24; // 12:00
   drawMetroStations(map, metroStations, bikeStations, bikesData, selectedDate, halfHourIndex);
   drawMetroLines(map, metroLines);
   drawBikeStations(map, bikeStations);
   console.log("Toutes les couches sont dessinées.");
 
-  // 4. Récupérer les sliders et boutons
-  const daySlider       = document.getElementById('day-slider');
-  const daySliderValue  = document.getElementById('slider-value');
-  const timeSlider      = document.getElementById('time-slider');
-  const timeSliderValue = document.getElementById('time-slider-value');
-  const playButton      = document.getElementById('play-button');
-  const timePlayButton  = document.getElementById('time-play-button');
+  // 4. Récupérer les sliders et boutons avec D3
+  const daySlider       = d3.select('#day-slider');
+  const daySliderValue  = d3.select('#slider-value');
+  const timeSlider      = d3.select('#time-slider');
+  const timeSliderValue = d3.select('#time-slider-value');
+  const playButton      = d3.select('#play-button');
+  const timePlayButton  = d3.select('#time-play-button');
 
-  // Config sliders
-  // Config sliders
-  daySlider.setAttribute('min', 0);
-  daySlider.setAttribute('max', totalDays);
-  daySlider.value = 2; // Défaut au 3ème jour (03/01/2021)
-  daySliderValue.textContent = formatDate(new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 2));
+  // Configurer le slider "jour" (min, max, valeur)
+  daySlider
+    .attr('min', 0)
+    .attr('max', totalDays)
+    .property('value', 2); // Défaut au 3ème jour
 
+  daySliderValue.text(formatDate(new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate() + 2
+  )));
 
-  timeSlider.setAttribute('min', 0);
-  timeSlider.setAttribute('max', 47);
-  timeSlider.value = 24; // Défaut à midi
-  timeSliderValue.textContent = formatHalfHour(24); // Mettre à jour l'étiquette
+  // Configurer le slider "demi-heure"
+  timeSlider
+    .attr('min', 0)
+    .attr('max', 47)
+    .property('value', 24); // Défaut : midi
+  timeSliderValue.text(formatHalfHour(24));
 
   // Événement slider "jour"
-  daySlider.addEventListener('input', () => {
-    const dayIndex = parseInt(daySlider.value);
+  daySlider.on('input', function() {
+    const dayIndex = +this.value;  // parseInt(this.value)
     const selectedDate = new Date(startDate);
     selectedDate.setDate(startDate.getDate() + dayIndex);
-    daySliderValue.textContent = formatDate(selectedDate);
+
+    daySliderValue.text(formatDate(selectedDate));
     console.log(`Jour sélectionné : ${formatDate(selectedDate)}`);
 
-    const halfHourIndex = parseInt(timeSlider.value);
+    const halfHourIndex = +timeSlider.property('value');
     updateMapWithTime(map, metroStations, bikeStations, bikesData, selectedDate, halfHourIndex);
     updateHeatmap(map, bikeStations, bikesData, selectedDate, halfHourIndex);
   });
 
   // Événement slider "demi-heure"
-  timeSlider.addEventListener('input', () => {
-    const dayIndex = parseInt(daySlider.value);
+  timeSlider.on('input', function() {
+    const dayIndex = +daySlider.property('value');
     const selectedDate = new Date(startDate);
     selectedDate.setDate(startDate.getDate() + dayIndex);
 
-    const halfHourIndex = parseInt(timeSlider.value);
-    timeSliderValue.textContent = formatHalfHour(halfHourIndex);
+    const halfHourIndex = +this.value;
+    timeSliderValue.text(formatHalfHour(halfHourIndex));
     console.log(`Demi-heure sélectionnée : ${formatHalfHour(halfHourIndex)}`);
 
     updateMapWithTime(map, metroStations, bikeStations, bikesData, selectedDate, halfHourIndex);
@@ -98,61 +99,66 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Bouton Play/Pause slider "jour"
-  playButton.addEventListener('click', () => {
-    const isPlaying = playButton.textContent.includes('⏸️');
+  playButton.on('click', function() {
+    const isPlaying = playButton.text().includes('⏸️');
     if (isPlaying) {
       clearInterval(playInterval);
       playInterval = null;
-      playButton.textContent = '▶️ Play';
+      playButton.text('▶️ Play');
       console.log("Lecture du jour arrêtée.");
     } else {
-      playButton.textContent = '⏸️ Pause';
+      playButton.text('⏸️ Pause');
       console.log("Lecture du jour commencée.");
-      let currentValue = parseInt(daySlider.value);
+      let currentValue = +daySlider.property('value');
       playInterval = setInterval(() => {
         currentValue++;
         if (currentValue > totalDays) {
           currentValue = 0;
         }
-        daySlider.value = currentValue;
-        daySlider.dispatchEvent(new Event('input'));
-      }, 1000); // Change toutes les secondes
+        daySlider.property('value', currentValue);
+        daySlider.dispatch('input');
+      }, 1000);
     }
   });
 
   // Bouton Play/Pause slider "demi-heure"
-  timePlayButton.addEventListener('click', () => {
-    const isPlaying = timePlayButton.textContent.includes('⏸️');
+  timePlayButton.on('click', function() {
+    const isPlaying = timePlayButton.text().includes('⏸️');
     if (isPlaying) {
       clearInterval(timeInterval);
       timeInterval = null;
-      timePlayButton.textContent = '⏯️ Play';
+      timePlayButton.text('⏯️ Play');
       console.log("Lecture de la demi-heure arrêtée.");
     } else {
-      timePlayButton.textContent = '⏸️ Pause';
+      timePlayButton.text('⏸️ Pause');
       console.log("Lecture de la demi-heure commencée.");
-      let currentValue = parseInt(timeSlider.value);
+      let currentValue = +timeSlider.property('value');
       timeInterval = setInterval(() => {
         currentValue++;
         if (currentValue > 47) {
           currentValue = 0;
         }
-        timeSlider.value = currentValue;
-        timeSlider.dispatchEvent(new Event('input'));
-      }, 1000);  // Mise à jour toutes les secondes
+        timeSlider.property('value', currentValue);
+        timeSlider.dispatch('input');
+      }, 1000);
     }
   });
 
   // 5. Afficher la heatmap initiale
-  updateHeatmap(map, bikeStations, bikesData, startDate, parseInt(timeSlider.value));
+  updateHeatmap(map, bikeStations, bikesData, startDate, +timeSlider.property('value'));
   console.log("Heatmap initiale affichée.");
 });
 
+
+
+
+
+
 /** =====================
- * Fonctions de dessin
+ * FONCTIONS JAVASCRIPT
  =====================**/
 
-function drawBikeStations(map, stations) {
+ function drawBikeStations(map, stations) {
   stations.forEach(station => {
     const marker = L.circleMarker([station.latitude, station.longitude], {
       radius: 2,
