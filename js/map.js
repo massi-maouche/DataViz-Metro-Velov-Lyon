@@ -1,16 +1,11 @@
 // map.js (script classique)
-
-// Fonction initCompassMap dans le scope global
-function initCompassMap() {
-  // Création de la carte Leaflet
+function initMap() {
   const mapCompass = L.map('map-compass', {
-    center: [45.75, 4.85], // Lyon
+    center: [45.75, 4.85],
     zoom: 13
   });
 
-  console.log("initCompassMap: mapCompass =", mapCompass); // debug
-
-  // Fond de carte OpenStreetMap (plus sûr)
+  console.log("initMap: mapCompass =", mapCompass);
   L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', 
     {
@@ -23,4 +18,4 @@ function initCompassMap() {
 }
 
 // Rendre accessible globalement
-window.initCompassMap = initCompassMap;
+window.initMap = initMap;

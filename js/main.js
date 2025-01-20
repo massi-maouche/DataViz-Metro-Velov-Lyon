@@ -21,8 +21,8 @@ const totalDays = Math.floor((endDate - startDate) / (1000*60*60*24));
 
 // Lorsque le DOM est chargé
 document.addEventListener('DOMContentLoaded', async () => {
-  // 1. Initialiser la carte (initCompassMap est global, défini dans map.js)
-  const map = initCompassMap();
+  // 1. Initialiser la carte (initMap est global, défini dans map.js)
+  const map = initMap();
   console.log("Map initialisée :", map);
 
   // 2. Charger les données (fonctions globales définies dans data.js)
