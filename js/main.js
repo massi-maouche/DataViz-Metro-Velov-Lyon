@@ -42,7 +42,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // 3. Dessiner : stations de métro, lignes, stations Vélo'v
-  drawMetroStations(map, metroStations, bikeStations);
+  const selectedDate = new Date(2021, 0, 1); // Exemple de date sélectionnée
+  const halfHourIndex = 24; // Exemple d'index de demi-heure (12:00)
+  drawMetroStations(map, metroStations, bikeStations, bikesData, selectedDate, halfHourIndex);
   drawMetroLines(map, metroLines);
   drawBikeStations(map, bikeStations);
   console.log("Toutes les couches sont dessinées.");
@@ -167,8 +169,14 @@ function drawBikeStations(map, stations) {
   });
 }
 
-function drawMetroStations(map, metroStations, bikeStations) {
+function drawMetroStations(map, metroStations, bikeStations, bikesData, selectedDate, halfHourIndex) {
   const color = '#3498db';
+  const hour = Math.floor(halfHourIndex / 2);
+  const minute = (halfHourIndex % 2 === 0) ? 0 : 30;
+  const year = selectedDate.getFullYear();
+  const month = selectedDate.getMonth() + 1;
+  const day = selectedDate.getDate();
+
   metroStations.features.forEach(station => {
     const [lng, lat] = station.geometry.coordinates;
     const marker = L.circleMarker([lat, lng], {
@@ -179,14 +187,33 @@ function drawMetroStations(map, metroStations, bikeStations) {
     }).addTo(map);
 
     marker.on('click', () => {
-      const nearby = bikeStations.filter(s => {
+      const nearbyStations = bikeStations.filter(s => {
         const distM = distance(s.latitude, s.longitude, lat, lng);
         return distM <= 500;
       });
-      const popupContent = `
+
+      const filteredBikesData = bikesData.filter(b =>
+        nearbyStations.some(s => s.id_velov === b.id_velov) &&
+        b.year === year &&
+        b.month === month &&
+        b.day === day &&
+        b.hour === hour &&
+        b.minute === minute
+      );
+
+      const totalAvailableBikes = filteredBikesData.reduce((sum, b) => sum + b.bikes, 0);
+
+      let popupContent = `
         <strong>${station.properties.nom}</strong><br>
-        Stations Vélo'v à 500 m : ${nearby.length}
+        Stations Vélo'v proches : ${nearbyStations.length}<br>
       `;
+
+      if (filteredBikesData.length > 0) {
+        popupContent += `Vélos disponibles sur la plage ${hour}h${String(minute).padStart(2, '0')} : ${totalAvailableBikes}`;
+      } else {
+        popupContent += `Aucune donnée de vélos disponible pour cette plage horaire.`;
+      }
+
       marker.bindPopup(popupContent).openPopup();
     });
   });
@@ -237,19 +264,20 @@ function updateMapWithTime(map, metroStations, bikeStations, bikesData, selected
         const distM = distance(s.latitude, s.longitude, lat, lng);
         return distM <= 500;
       });
-      const totalDepartures = bikesData.filter(b =>
+
+      const totalAvailableBikes = bikesData.filter(b =>
         nearbyStations.some(s => s.id_velov === b.id_velov) &&
         b.year === year &&
         b.month === month &&
         b.day === day &&
         b.hour === hour &&
         b.minute === minute
-      ).reduce((sum, b) => sum + b.departure30min, 0);
+      ).reduce((sum, b) => sum + b.bikes, 0);
 
       const popupContent = `
         <strong>${station.properties.nom}</strong><br>
         Stations Vélo'v proches : ${nearbyStations.length}<br>
-        Départs sur la plage ${hour}h${String(minute).padStart(2, '0')} : ${totalDepartures}
+        Vélos disponibles sur la plage ${hour}h${String(minute).padStart(2, '0')} : ${totalAvailableBikes}
       `;
       marker.bindPopup(popupContent).openPopup();
       window.metroMarkers.push(marker);
