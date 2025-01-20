@@ -88,15 +88,10 @@
   <!-- Barre de navigation -->
   <nav class="navbar">
     <a href="index.html" class="logo">Vélo'v DataViz</a>
-    <div class="nav-links">
-      <a href="index.html">Heatmap Map</a>
-      <a href="station-availability.html">Disponibilité des Vélos</a>
-      <a href="average-bikes.html">Average Bikes</a>
-    </div>
   </nav>
 
   <div class="container">
-    <h1>Carte Heatmap Vélo'v</h1>
+    <h1 style="text-align: center;">Carte Heatmap Vélo'v</h1>
     <p>Explorez la disponibilité des vélos dans la métropole, avec une transition fluide lors de la modification de la date ou de l'heure. Utilisez les contrôles ci-dessous pour naviguer dans le temps.</p>
 
     <!-- Conteneur des contrôles des sliders -->
@@ -112,19 +107,16 @@
       <!-- Contrôles Demi-heure (slider + bouton) -->
       <div class="slider-wrapper">
         <label for="time-slider">Sélectionner la demi-heure :</label>
-        <input type="range" id="time-slider" min="0" max="47" value="0">
-        <span id="time-slider-value">00:00</span>
+        <input type="range" id="time-slider" min="0" max="47" value="24"> <!-- Défaut à midi -->
+        <span id="time-slider-value">12:00</span> <!-- Mettre à jour l'étiquette -->
         <button id="time-play-button">⏯️ Play</button>
       </div>
-    </div>
 
     <!-- Conteneur de la carte -->
     <div id="map-compass"></div>
   </div>
 
-  <footer>
-    &copy; 2025 - Projet Dataviz Vélo'v 
-  </footer>
+  
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>

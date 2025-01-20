@@ -56,15 +56,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   const timePlayButton  = document.getElementById('time-play-button');
 
   // Config sliders
+  // Config sliders
   daySlider.setAttribute('min', 0);
   daySlider.setAttribute('max', totalDays);
-  daySlider.value = 0;
-  daySliderValue.textContent = formatDate(startDate);
+  daySlider.value = 2; // Défaut au 3ème jour (03/01/2021)
+  daySliderValue.textContent = formatDate(new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 2));
+
 
   timeSlider.setAttribute('min', 0);
   timeSlider.setAttribute('max', 47);
-  timeSlider.value = 0;
-  timeSliderValue.textContent = formatHalfHour(0);
+  timeSlider.value = 24; // Défaut à midi
+  timeSliderValue.textContent = formatHalfHour(24); // Mettre à jour l'étiquette
 
   // Événement slider "jour"
   daySlider.addEventListener('input', () => {

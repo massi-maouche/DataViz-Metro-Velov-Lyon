@@ -14,29 +14,22 @@
 </head>
 <body>
   <!-- Barre de navigation -->
-  <nav class="navbar">
-    <a href="index.html" class="logo">Vélo'v DataViz</a>
-    <div class="nav-links">
-      <a href="index.html">Heatmap Map</a>
-      <a href="station-availability.html">Disponibilité des Vélos</a>
-      <a href="average-bikes.html">Moyenne des Vélos</a>
-    </div>
-  </nav>
+  
 
   <div class="container">
-    <h1>Moyenne de vélos disponibles par station de métro</h1>
+    <h1 style="text-align: center;">Moyenne de vélos disponibles par station de métro</h1>
     <p>Comparez le nombre moyen de vélos disponibles autour des stations de métro, selon la journée et l’heure sélectionnées.</p>
     
     <div class="slider-container" style="display: inline-block; margin-right: 20px;">
       <label for="day-slider">Sélectionner le Jour :</label>
       <input type="range" id="day-slider" min="0" max="5" value="0">
-      <span id="day-label">Friday</span>
+      <span id="day-label">Sunday</span>
     </div>
 
     <div class="slider-container" style="display: inline-block;">
       <label for="hour-slider">Sélectionner l'Heure :</label>
-      <input type="range" id="hour-slider" min="0" max="23" value="0">
-      <span id="hour-label">00:00</span>
+      <input type="range" id="hour-slider" min="0" max="23" value="12"> <!-- Défaut à midi -->
+      <span id="hour-label">12:00</span> <!-- Mettre à jour l'étiquette -->
     </div>
     
     <svg id="barChart" width="960" height="600"></svg>
@@ -55,6 +48,10 @@
   const hourSlider = document.getElementById('hour-slider');
   const dayLabel = document.getElementById('day-label');
   const hourLabel = document.getElementById('hour-label');
+
+  // Définir les valeurs par défaut
+  daySlider.value = 2; // Défaut au 3ème jour (03/01/2021)
+  hourSlider.value = 12; // Défaut à midi (12:00)
 
   function updateDayLabel() {
     dayLabel.textContent = daysOfWeek[+daySlider.value];

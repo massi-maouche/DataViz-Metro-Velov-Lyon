@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Vélo'v vs Metro Stations</title>
+  <style>
+    /* Pour éviter les marges du body */
+    html, body {
+      margin: 0; 
+      padding: 0; 
+      overflow-x: hidden; /* Pas de scroll horizontal */
+    }
+
+    /* Chaque iframe prendra toute la largeur, 
+       mais sa hauteur sera ajustée par JS */
+    iframe {
+      display: block;
+      width: 100%;
+      border: none;
+      /* Désactive le scroll interne (au cas où) */
+      overflow: hidden; 
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1er iframe: votre page Heatmap -->
+  <iframe 
+    id="iframe1" 
+    src="index.html" 
+    scrolling="no" 
+    onload="autoResize('iframe1')">
+  </iframe>
+
+  <!-- 2e iframe: votre page Disponibilité -->
+  <iframe 
+    id="iframe2" 
+    src="station-availability.html" 
+    scrolling="no"
+    onload="autoResize('iframe2')">
+  </iframe>
+
+  <!-- 3e iframe: votre page Moyenne -->
+  <iframe 
+    id="iframe3" 
+    src="average-bikes.html" 
+    scrolling="no"
+    onload="autoResize('iframe3')">
+  </iframe>
+
+  <script>
+    /**
+     * Ajuste la hauteur de l'iframe pour qu'elle corresponde
+     * à la hauteur réelle de son contenu (document interne).
+     * 
+     * @param {string} iframeId - L'ID de l'iframe à redimensionner
+     */
+    function autoResize(iframeId) {
+      let iframe = document.getElementById(iframeId);
+      if (!iframe || !iframe.contentWindow) return;
+      
+      // Récupérer le body et le html du document interne
+      let body = iframe.contentWindow.document.body;
+      let html = iframe.contentWindow.document.documentElement;
+
+      // Calculer la hauteur "max" pour bien prendre en compte tous les offsets
+      let contentHeight = Math.max(
+        body.scrollHeight, 
+        body.offsetHeight,
+        html.clientHeight, 
+        html.scrollHeight, 
+        html.offsetHeight
+      );
+
+      // Appliquer cette hauteur à l'iframe
+      iframe.style.height = contentHeight + 'px';
+    }
+  </script>
+
+</body>
+</html>
