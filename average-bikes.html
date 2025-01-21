@@ -41,7 +41,7 @@
 
 <script>
   const startDate = new Date(2021, 0, 1); // 1 Janvier 2021
-  const daysOfWeek = ["Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"];
+  // const daysOfWeek = ["Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"];
   const hoursOfDay = [...Array(24).keys()].map(h => h.toString().padStart(2, '0') + ":00");
 
   const daySlider = document.getElementById('day-slider');
@@ -54,8 +54,17 @@
   hourSlider.value = 12; // Défaut à midi (12:00)
 
   function updateDayLabel() {
-    dayLabel.textContent = daysOfWeek[+daySlider.value];
+    const dayIndex = +daySlider.value;
+    const selectedDate = new Date(startDate);
+    selectedDate.setDate(startDate.getDate() + dayIndex);
+    
+    const day = selectedDate.getDate().toString().padStart(2, '0');
+    const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = selectedDate.getFullYear();
+    
+    dayLabel.textContent = `${day}/${month}/${year}`;
   }
+
   function updateHourLabel() {
     hourLabel.textContent = hoursOfDay[hourSlider.value];
   }
