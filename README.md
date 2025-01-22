@@ -1,7 +1,10 @@
 # Data-Visualization
 
 ## Description
-A comprehensive data visualization project that analyzes and presents bike usage across Lyon's metro and Velov (bike-sharing) stations. Utilizing data from the Grand Lyon API, the project offers insightful visual representations to aid in understanding bike activity patterns.
+A comprehensive data visualization project that analyzes and presents bike usage across Lyon's metro and Velov (bike-sharing) stations. Utilizing data from the Grand Lyon API, the project offers insightful visual representations to aid in understanding bike activity patterns. We tried to use a bigger timelaps (one month) but the loading of the web page takes a considerable time as well as for interacting with it.
+
+## Web Interface
+[link to here](https://t8trust.github.io/DataViz-Metro-Velov-Lyon/allinone)
 
 ## Data Source
 Data is sourced from the [Grand Lyon API](https://grandlyon.com/api).
