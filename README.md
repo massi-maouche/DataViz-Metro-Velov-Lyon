@@ -34,7 +34,7 @@ Data is sourced from the [Grand Lyon API](https://grandlyon.com/api).
 
 ## Usage
 
-1. **Open [average-bikes.html](http://_vscodecontentref_/0) in your web browser to view the data visualization.**
+1. **Open [allinone.html](http://_vscodecontentref_/0) in your web browser to view the data visualization.**
 
 2. **Use the sliders to select different dates and times to update the bike usage charts interactively.**
 
