@@ -1,5 +1,7 @@
 # **Data-Visualization: Metro-Velov Usage in Lyon**
 
+![Sneak Peek](./teaser.png)
+
 ## **Description**
 This project provides an in-depth analysis and visualization of bike-sharing usage (Vélo'v) in Lyon in relation to the proximity of metro stations. Using data from the Grand Lyon API, the project identifies patterns of bike activity and highlights the spatial and temporal correlation between metro schedules and bike usage. 
 
