@@ -81,6 +81,25 @@
         align-items: stretch;
       }
     }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem;
+      background-color: #333;
+      color: white;
+    }
+
+    .navbar-links a {
+      margin-left: 1rem;
+      color: white;
+      text-decoration: none;
+    }
+
+    .navbar-links a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 
@@ -88,6 +107,10 @@
   <!-- Barre de navigation -->
   <nav class="navbar">
     <a href="index.html" class="logo">Vélo'v DataViz</a>
+    <div class="navbar-links">
+      <a href="mailto:massinissa.maou@gmail.com" target="_blank">Représentant du groupe : Massinissa Maouche</a>
+      <a href="https://lyondataviz.github.io/teaching/lyon1-m2/2024/" target="_blank">Vizualisation Course - Université Lyon1</a>
+    </div>
   </nav>
 
   <div class="container">
