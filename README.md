@@ -38,6 +38,8 @@ Data is sourced from the [Grand Lyon API](https://grandlyon.com/api).
 
 2. **Use the sliders to select different dates and times to update the bike usage charts interactively.**
 
+3. **[Our Wiki (Cahier d'Avancement)](https://github.com/t8trust/DataViz-Metro-Velov-Lyon/wiki)**
+
 ## Technologies Used
 - **HTML**
 - **CSS**
