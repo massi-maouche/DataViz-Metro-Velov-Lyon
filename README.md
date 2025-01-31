@@ -8,7 +8,7 @@ This project provides an in-depth analysis and visualization of bike-sharing usa
 The visualization incorporates various datasets and offers interactive tools for users to explore the data dynamically. Initially, the project aimed to analyze a full month of data, but performance limitations led to optimizations for smoother interaction.
 
 ## **Web Interface**
-Access the live project here: [All-in-One Dashboard](https://t8trust.github.io/DataViz-Metro-Velov-Lyon/allinone)
+Access the live project here: [All-in-One Dashboard](https://massi-maouche.github.io/DataViz-Metro-Velov-Lyon/allinone)
 
 ---
 
